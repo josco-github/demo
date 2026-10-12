@@ -32,3 +32,7 @@
 @media(min-width:851px){.note-two{left:37%;right:auto;top:auto;bottom:-18px;transform:rotate(4deg)}}
 
 
+/* Keep both desktop orbit diamonds the same size. */
+@media(min-width:851px){.star-one,.star-two{font-size:25px}}
+
+
