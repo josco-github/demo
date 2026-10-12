@@ -3,3 +3,5 @@
 .avatar-picker{width:42px;height:32px;border:1px solid #e8e6df;border-radius:9px;background:#fffefa;text-align:center;font-size:18px;cursor:pointer;padding:0}.avatar-mini{width:25px;height:25px;border-radius:8px;background:#f1f0ea;display:grid;place-items:center;flex:none;font-size:16px}.round-leader{display:inline-block;animation:round-winner-shake .55s ease-in-out 3;transform-origin:center}@keyframes round-winner-shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-3px) rotate(-2deg)}40%{transform:translateX(3px) rotate(2deg)}60%{transform:translateX(-2px) rotate(-1deg)}80%{transform:translateX(2px) rotate(1deg)}}@media(prefers-reduced-motion:reduce){.round-leader{animation:none}}
 
 .result-row{height:auto;min-height:55px;padding:7px 0}.result-row .score-name{display:flex;flex-direction:column;align-items:flex-start;gap:3px}.player-answer{font-size:9px;color:#85838d;font-weight:400;text-transform:none;letter-spacing:0}.result-row .round-points{flex:none;width:42px}
+
+.landing-art{z-index:0;pointer-events:none}.landing h1,.landing .features{position:relative;z-index:2}
