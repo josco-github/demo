@@ -52,3 +52,7 @@
 .shell:has(.landing) .privacy-note{border-top:0}
 
 
+
+
+/* Give the active Ready status a soft green halo. */
+.shell:has(.game-head) .status-text:not(.muted){display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#e5f0e2;color:#4d754e;box-shadow:0 0 0 2px rgba(105,154,97,.18),0 0 12px rgba(105,154,97,.38)}
