@@ -7,7 +7,8 @@ import { resolve } from 'node:path';
 import { CATEGORIES, disconnectPlayer, joinRoom, makeRoom, newCode, publicState, startRound, submitAnswer, type Room } from './game.js';
 
 const PORT = Number(process.env.PORT || 3001);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:5173');
+const publicHost = process.env.KOYEB_PUBLIC_DOMAIN || process.env.RENDER_EXTERNAL_HOSTNAME;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || (publicHost ? `https://${publicHost}` : 'http://localhost:5173');
 const ROOM_TTL_MS = Number(process.env.ROOM_TTL_MS || 6 * 60 * 60 * 1000);
 const RECONNECT_GRACE_MS = Number(process.env.RECONNECT_GRACE_MS || 60_000);
 const app = express(); app.disable('x-powered-by'); app.get('/health', (_req,res)=>res.json({ok:true, service:'quickquest'}));
