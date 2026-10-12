@@ -44,3 +44,7 @@
 .shell:has(.game-head) .topbar{border-bottom:2px solid rgba(53,51,58,.24)}.shell:has(.game-head) .game-footer{border-top:2px solid rgba(53,51,58,.24);padding-top:14px}.shell:has(.game-head) .game-footer .text-button{color:#4f534a;font-weight:700}
 
 
+/* Remove the landing card's lower edge and emphasize the footer divider. */
+.shell:has(.landing) .entry-card{border-bottom:0}.shell:has(.landing) .site-footer{border-top-width:3px}
+
+
