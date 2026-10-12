@@ -36,3 +36,7 @@
 @media(min-width:851px){.star-one,.star-two{font-size:25px}}
 
 
+/* Balance the desktop diamonds and level the Quick Thinking label. */
+@media(min-width:851px){.star-two{left:15%;bottom:50px}.note-two{left:42%;transform:rotate(0deg)}}
+
+
