@@ -2,7 +2,12 @@ import { randomBytes, randomUUID, createHash } from 'node:crypto';
 
 export type Mode = 'unscramble' | 'sprint';
 export type Phase = 'lobby' | 'playing' | 'results' | 'finished';
-export type Player = { id: string; name: string; score: number; connected: boolean; ready: boolean; host: boolean; lastSeen: number };
+export const AVATARS = [
+  { emoji: '🦊', name: 'Fox' }, { emoji: '🐼', name: 'Panda' }, { emoji: '🐸', name: 'Frog' },
+  { emoji: '🦉', name: 'Owl' }, { emoji: '🐙', name: 'Octopus' }, { emoji: '🐧', name: 'Penguin' },
+  { emoji: '🐯', name: 'Tiger' }, { emoji: '🦄', name: 'Unicorn' },
+] as const;
+export type Player = { id: string; name: string; avatar: string; score: number; connected: boolean; ready: boolean; host: boolean; lastSeen: number };
 export type PublicRoom = { code: string; phase: Phase; players: Player[]; hostId: string; round: number; rounds: number; mode: Mode; category: string; deadline: number | null; serverNow: number; prompt: string; hint: string; submitted: string[]; answer: string | null; roundScores: Record<string, number>; locked: boolean; roundId: string | null };
 type Seat = Player & { tokenHash: string; socketId: string | null; disconnectedAt: number | null };
 export type Room = PublicRoom & { createdAt: number; seats: Map<string, Seat>; submissions: Map<string, { answer: string; at: number; correct: boolean; points: number }>; acceptedSprint: Set<string>; timer: ReturnType<typeof setTimeout> | null; lastReaction: Map<string, number> };
@@ -11,6 +16,9 @@ export const CATEGORIES: Record<string, string[]> = {
   Food: ['pancake', 'avocado', 'pretzel', 'blueberry', 'omelette', 'sandwich', 'cinnamon', 'watermelon', 'broccoli', 'chocolate'],
   Nature: ['rainbow', 'mountain', 'volcano', 'meadow', 'waterfall', 'thunder', 'glacier', 'wildflower', 'forest', 'seashell'],
   Objects: ['backpack', 'lantern', 'keychain', 'umbrella', 'notebook', 'telescope', 'headphones', 'suitcase', 'toothbrush', 'skateboard'],
+  Places: ['airport', 'castle', 'hospital', 'library', 'museum', 'station', 'stadium', 'school', 'village', 'hotel', 'market', 'bridge'],
+  Travel: ['journey', 'passport', 'luggage', 'suitcase', 'boarding', 'highway', 'ticket', 'cruise', 'airplane', 'backpack', 'itinerary', 'tourist'],
+  Sports: ['soccer', 'tennis', 'baseball', 'cricket', 'hockey', 'volleyball', 'badminton', 'basketball', 'swimming', 'golf', 'rugby', 'skiing'],
 };
 const norm = (s: string) => s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 const cleanName = (s: string) => s.trim().replace(/[<>\u0000-\u001f]/g, '').slice(0,18);
@@ -25,7 +33,7 @@ function scrambled(word: string) {
 }
 export function makeRoom(code: string, id: string, name: string, token: string): Room {
   const nickname=cleanName(name); if(!nickname) throw Error('Choose a nickname.');
-  const host: Seat = { id, name:nickname, score: 0, connected: true, ready: true, host: true, lastSeen: Date.now(), tokenHash: digest(token), socketId: null, disconnectedAt: null };
+  const host: Seat = { id, name:nickname, avatar:AVATARS[0].emoji, score: 0, connected: true, ready: true, host: true, lastSeen: Date.now(), tokenHash: digest(token), socketId: null, disconnectedAt: null };
   return { code, phase: 'lobby', players: [], createdAt: Date.now(), hostId: id, round: 0, rounds: 5, mode: 'unscramble', category: 'Animals', deadline: null, serverNow: Date.now(), prompt: '', hint: '', submitted: [], answer: null, roundScores: {}, locked: false, roundId: null, seats: new Map([[id, host]]), submissions: new Map(), acceptedSprint: new Set(), timer: null, lastReaction: new Map() };
 }
 export function publicState(room: Room): PublicRoom {
@@ -44,7 +52,7 @@ export function joinRoom(room: Room, id: string, name: string, token: string, so
   if (room.locked || room.phase !== 'lobby') throw Error('This room is locked or the game has already started.');
   if (room.seats.size >= 8) throw Error('This room is full (8 players max).');
   if ([...room.seats.values()].some(p=>p.name.toLowerCase()===n.toLowerCase())) throw Error('That nickname is already taken.');
-  const p: Seat = { id, name:n, score:0, connected:true, ready:false, host:false, lastSeen:Date.now(), tokenHash:digest(token), socketId, disconnectedAt:null };
+  const p: Seat = { id, name:n, avatar:AVATARS[room.seats.size % AVATARS.length].emoji, score:0, connected:true, ready:false, host:false, lastSeen:Date.now(), tokenHash:digest(token), socketId, disconnectedAt:null };
   const host=room.seats.get(room.hostId); if(!host?.connected){if(host)host.host=false;room.hostId=p.id;p.host=true;}
   room.seats.set(id,p); return p;
 }
@@ -74,7 +82,7 @@ export function submitAnswer(room: Room, playerId: string, raw: unknown, now=Dat
     correct = answer.startsWith(norm(room.answer ?? '')) && words.includes(answer) && !room.acceptedSprint.has(answer);
   }
   if (correct && room.mode === 'sprint') room.acceptedSprint.add(answer);
-  const points = correct ? 100 + (now <= (room.deadline - 20_000) ? 20 : 0) : 0;
+  const points = correct ? 20 + (now <= (room.deadline - 20_000) ? 5 : 0) : 0;
   const row = { answer, at: now, correct, points }; room.submissions.set(playerId, row); player.score += points; room.roundScores[playerId] = points;
   return { correct, points, acceptedCount: room.submissions.size, // send only submitter's own feedback; never echo answer to other players
     feedback: correct ? `Nice! +${points}` : room.mode === 'unscramble' ? 'Not quite. Your answer is locked in.' : 'That word does not fit or was already accepted.' };
@@ -87,4 +95,3 @@ export function disconnectPlayer(room: Room, id: string, now=Date.now()) {
     if (next) { room.hostId = next.id; next.host = true; p.host = false; }
   }
 }
-

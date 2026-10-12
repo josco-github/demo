@@ -4,7 +4,7 @@ import { Server, Socket } from 'socket.io';
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { CATEGORIES, disconnectPlayer, joinRoom, makeRoom, newCode, publicState, startRound, submitAnswer, type Room } from './game.js';
+import { AVATARS, CATEGORIES, disconnectPlayer, joinRoom, makeRoom, newCode, publicState, startRound, submitAnswer, type Room } from './game.js';
 
 const PORT = Number(process.env.PORT || 3001);
 const publicHost = process.env.KOYEB_PUBLIC_DOMAIN || process.env.RENDER_EXTERNAL_HOSTNAME;
@@ -64,6 +64,7 @@ io.on('connection',(socket)=>{
     }catch(e){failure(socket,'host-settings',e);}
   });
   socket.on('ready', (payload:any)=>{try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(room.phase!=='lobby')throw Error('The game has already started.');p.ready=!!payload.ready;emitRoom(room);}catch(e){failure(socket,'ready',e);}});
+  socket.on('choose-avatar',(payload:any)=>{try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(room.phase!=='lobby')throw Error('Avatars can only be changed before the game starts.');if(!AVATARS.some(a=>a.emoji===payload?.avatar))throw Error('Choose an available avatar.');p.avatar=payload.avatar;emitRoom(room);}catch(e){failure(socket,'choose-avatar',e);}});
   socket.on('start-game',(payload:any)=>{
     try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(p.id!==room.hostId)throw Error('Only the host can start.');if(room.phase!=='lobby')throw Error('A game is already in progress.');
       const active=[...room.seats.values()].filter(x=>x.connected); if(active.length<2)throw Error('Invite at least one more player to start.');
@@ -90,4 +91,3 @@ io.on('connection',(socket)=>{
 });
 setInterval(()=>{const now=Date.now();for(const [code,room] of rooms){if(now-room.createdAt>=ROOM_TTL_MS){clearTimer(room);rooms.delete(code);continue;}for(const [id,p]of room.seats)if(!p.connected&&p.disconnectedAt&&now-p.disconnectedAt>RECONNECT_GRACE_MS){room.seats.delete(id);if(room.hostId===id){const n=[...room.seats.values()].find(x=>x.connected);room.hostId=n?.id||'';if(n)n.host=true;}}if(room.seats.size===0){clearTimer(room);rooms.delete(code);}}for(const [key,v]of peerLimits)if(now-v.at>120_000)peerLimits.delete(key);},60_000).unref();
 http.listen(PORT,'0.0.0.0',()=>console.log(`QuickQuest server listening on ${PORT}`));
-
