@@ -8,7 +8,7 @@ export const AVATARS = [
   { emoji: '🐯', name: 'Tiger' }, { emoji: '🦄', name: 'Unicorn' },
 ] as const;
 export type Player = { id: string; name: string; avatar: string; score: number; connected: boolean; ready: boolean; host: boolean; lastSeen: number };
-export type PublicRoom = { code: string; phase: Phase; players: Player[]; hostId: string; round: number; rounds: number; mode: Mode; category: string; deadline: number | null; serverNow: number; prompt: string; hint: string; submitted: string[]; answer: string | null; roundScores: Record<string, number>; locked: boolean; roundId: string | null };
+export type PublicRoom = { code: string; phase: Phase; players: Player[]; hostId: string; round: number; rounds: number; mode: Mode; category: string; deadline: number | null; serverNow: number; prompt: string; hint: string; submitted: string[]; answer: string | null; roundScores: Record<string, number>; roundAnswers: Record<string, string>; locked: boolean; roundId: string | null };
 type Seat = Player & { tokenHash: string; socketId: string | null; disconnectedAt: number | null };
 export type Room = PublicRoom & { createdAt: number; seats: Map<string, Seat>; submissions: Map<string, { answer: string; at: number; correct: boolean; points: number }>; acceptedSprint: Set<string>; timer: ReturnType<typeof setTimeout> | null; lastReaction: Map<string, number> };
 export const CATEGORIES: Record<string, string[]> = {
@@ -21,6 +21,18 @@ export const CATEGORIES: Record<string, string[]> = {
   Sports: ['soccer', 'tennis', 'baseball', 'cricket', 'hockey', 'volleyball', 'badminton', 'basketball', 'swimming', 'golf', 'rugby', 'skiing'],
 };
 const norm = (s: string) => s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+function closeSpelling(a: string, b: string) {
+  if (!a || !b) return false;
+  const limit = Math.max(1, Math.floor(b.length * 0.2));
+  if (Math.abs(a.length - b.length) > limit) return false;
+  let row = Array.from({length:b.length+1},(_,i)=>i);
+  for (let i=1;i<=a.length;i++) {
+    const next=[i];
+    for (let j=1;j<=b.length;j++) next[j]=Math.min(next[j-1]+1,row[j]+1,row[j-1]+(a[i-1]===b[j-1]?0:1));
+    row=next;
+  }
+  return row[b.length] <= limit;
+}
 const cleanName = (s: string) => s.trim().replace(/[<>\u0000-\u001f]/g, '').slice(0,18);
 const digest = (s: string) => createHash('sha256').update(s).digest('hex');
 const codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -34,10 +46,11 @@ function scrambled(word: string) {
 export function makeRoom(code: string, id: string, name: string, token: string): Room {
   const nickname=cleanName(name); if(!nickname) throw Error('Choose a nickname.');
   const host: Seat = { id, name:nickname, avatar:AVATARS[0].emoji, score: 0, connected: true, ready: true, host: true, lastSeen: Date.now(), tokenHash: digest(token), socketId: null, disconnectedAt: null };
-  return { code, phase: 'lobby', players: [], createdAt: Date.now(), hostId: id, round: 0, rounds: 5, mode: 'unscramble', category: 'Animals', deadline: null, serverNow: Date.now(), prompt: '', hint: '', submitted: [], answer: null, roundScores: {}, locked: false, roundId: null, seats: new Map([[id, host]]), submissions: new Map(), acceptedSprint: new Set(), timer: null, lastReaction: new Map() };
+  return { code, phase: 'lobby', players: [], createdAt: Date.now(), hostId: id, round: 0, rounds: 5, mode: 'unscramble', category: 'Animals', deadline: null, serverNow: Date.now(), prompt: '', hint: '', submitted: [], answer: null, roundScores: {}, roundAnswers: {}, locked: false, roundId: null, seats: new Map([[id, host]]), submissions: new Map(), acceptedSprint: new Set(), timer: null, lastReaction: new Map() };
 }
 export function publicState(room: Room): PublicRoom {
-  return { code: room.code, phase: room.phase, players: [...room.seats.values()].map(({tokenHash:_, socketId:__, disconnectedAt:___, ...p})=>({...p})), hostId: room.hostId, round: room.round, rounds: room.rounds, mode: room.mode, category: room.category, deadline: room.deadline, serverNow: Date.now(), prompt: room.prompt, hint: room.hint, submitted: [...room.submissions.keys()], answer: room.phase === 'results' || room.phase === 'finished' || (room.phase === 'playing' && room.mode === 'sprint') ? room.answer : null, roundScores: room.phase === 'results' || room.phase === 'finished' ? room.roundScores : {}, locked: room.locked, roundId: room.roundId };
+  const showAnswers = room.phase === 'results' || room.phase === 'finished';
+  return { code: room.code, phase: room.phase, players: [...room.seats.values()].map(({tokenHash:_, socketId:__, disconnectedAt:___, ...p})=>({...p})), hostId: room.hostId, round: room.round, rounds: room.rounds, mode: room.mode, category: room.category, deadline: room.deadline, serverNow: Date.now(), prompt: room.prompt, hint: room.hint, submitted: [...room.submissions.keys()], answer: room.phase === 'results' || room.phase === 'finished' || (room.phase === 'playing' && room.mode === 'sprint') ? room.answer : null, roundScores: showAnswers ? room.roundScores : {}, roundAnswers: showAnswers ? Object.fromEntries([...room.submissions].map(([id,row])=>[id,row.answer])) : {}, locked: room.locked, roundId: room.roundId };
 }
 export function joinRoom(room: Room, id: string, name: string, token: string, socketId: string, graceMs: number) {
   const n = cleanName(name);
@@ -66,7 +79,7 @@ export function startRound(room: Room, now=Date.now()) {
   } else {
     const initials = [...new Set(list.map(word => word[0].toUpperCase()))]; const starting = initials[randomBytes(1)[0] % initials.length]; room.prompt = `Name a ${room.category.toLowerCase()} word starting with ${starting}`; room.hint = `${room.category} · starts with ${starting}`; room.answer = starting;
   }
-  room.deadline = now + 30_000;
+  room.deadline = now + 20_000;
 }
 export function submitAnswer(room: Room, playerId: string, raw: unknown, now=Date.now()) {
   if (room.phase !== 'playing' || !room.deadline || now >= room.deadline) throw Error('Time is up.');
@@ -75,17 +88,24 @@ export function submitAnswer(room: Room, playerId: string, raw: unknown, now=Dat
   if (room.submissions.has(playerId)) throw Error('You already submitted this round.');
   if (typeof raw !== 'string' || raw.length > 40) throw Error('Answer must be 1–40 characters.');
   const answer = norm(raw); if (!answer || answer.length > 28) throw Error('Enter a valid word.');
-  let correct: boolean;
-  if (room.mode === 'unscramble') correct = answer === norm(room.answer ?? '');
-  else {
-    const words = (CATEGORIES[room.category] ?? []).map(norm);
-    correct = answer.startsWith(norm(room.answer ?? '')) && words.includes(answer) && !room.acceptedSprint.has(answer);
+  const words = (CATEGORIES[room.category] ?? []).map(norm);
+  const target = norm(room.answer ?? '');
+  let correct = false;
+  let similar = false;
+  if (room.mode === 'unscramble') {
+    correct = answer === target;
+    similar = !correct && (closeSpelling(answer, target) || (words.includes(answer) && answer !== target));
+  } else {
+    const validWord = words.includes(answer);
+    correct = answer.startsWith(target) && validWord && !room.acceptedSprint.has(answer);
+    similar = !correct && !room.acceptedSprint.has(answer) && (validWord || words.some(word=>word.startsWith(target) && closeSpelling(answer, word)));
   }
-  if (correct && room.mode === 'sprint') room.acceptedSprint.add(answer);
-  const points = correct ? 20 + (now <= (room.deadline - 20_000) ? 5 : 0) : 0;
+  if ((correct || similar) && room.mode === 'sprint' && words.includes(answer)) room.acceptedSprint.add(answer);
+  const speedBonus = now <= (room.deadline - 10_000) ? 1 : 0;
+  const points = correct ? 3 + speedBonus : similar ? 2 + speedBonus : 0;
   const row = { answer, at: now, correct, points }; room.submissions.set(playerId, row); player.score += points; room.roundScores[playerId] = points;
-  return { correct, points, acceptedCount: room.submissions.size, // send only submitter's own feedback; never echo answer to other players
-    feedback: correct ? `Nice! +${points}` : room.mode === 'unscramble' ? 'Not quite. Your answer is locked in.' : 'That word does not fit or was already accepted.' };
+  return { correct, similar, points, acceptedCount: room.submissions.size, // only the submitter sees feedback until the round ends
+    feedback: correct ? `Correct! +${points}` : similar ? `Similar answer! +${points}` : room.mode === 'unscramble' ? 'Not quite. Your answer is locked in.' : 'That word does not fit or was already accepted.' };
 }
 export function disconnectPlayer(room: Room, id: string, now=Date.now()) {
   const p = room.seats.get(id); if (!p) return;

@@ -1,4 +1,4 @@
-# QuickQuest: Word Arena
+# Quick Quest: Word Arena
 
 A room-code word game for 2–8 players. The browser is a React/Vite client; an Express + Socket.IO process owns each room's canonical state, validates submissions, scores answers, and advances rounds. The client synchronizes its countdown to the server's absolute deadline. There are no player accounts.
 
@@ -32,7 +32,7 @@ In production the client and Socket.IO server are served from one origin. For a 
 
 The server keeps rooms in memory. A room has a lobby, a playing phase, a results phase, then a finished phase. It stores the roster and scores, current round ID, a server-generated deadline, private answer key, submissions, accepted Category Sprint words, and host ID. Public snapshots omit the Unscramble key during play. A five-character room code is generated server-side, and collisions are checked before reserving it. Room joins and creations are rate-limited by connecting IP; input sizes, nicknames, room size, host actions, and event phase are checked on the server.
 
-Unscramble accepts case-insensitive letters after Unicode decomposition and removal of non-ASCII letters; its target must exactly equal the canonical word. Category Sprint currently validates against a small curated category word list and rejects a word accepted earlier that round. Each player may submit one answer per round. A correct answer scores 20, with +5 for submission in the first 10 seconds. Incorrect answers score zero. Ties sort by total score and then nickname alphabetically.
+Unscramble accepts case-insensitive letters after Unicode decomposition and removal of non-ASCII letters; its target must exactly equal the canonical word. Category Sprint currently validates against a small curated category word list and rejects a word accepted earlier that round. Each player may submit one answer per round. A correct answer scores 3, with +1 for submission in the first 10 seconds. Similar answers score 2, with +1 for an answer in the first 10 seconds. Each round lasts 20 seconds. Incorrect answers score zero. Ties sort by total score and then nickname alphabetically.
 
 Reconnect credentials are random 256-bit client-generated bearer secrets; only a SHA-256 digest is held in server memory. The browser stores its credential and room code in local storage so a refresh can restore the seat. Never share your browser profile with someone you do not trust. Credentials and room data disappear when the process restarts; there is no database, Redis, analytics, or account system in this MVP. A seat is removed after the 60-second grace period. Empty rooms expire after the configured cleanup period. This is a lightweight game, not a service with audited privacy guarantees.
 

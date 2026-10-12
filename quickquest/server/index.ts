@@ -29,7 +29,7 @@ function finishRound(room:Room) {
   if(room.round>=room.rounds) { room.timer=setTimeout(()=>{ if(room.phase==='results'){room.phase='finished'; emitRoom(room);} }, 7000); }
   else room.timer=setTimeout(()=>nextRound(room), 7000);
 }
-function nextRound(room:Room) { if(room.phase!=='results')return; clearTimer(room); startRound(room); emitRoom(room); room.timer=setTimeout(()=>finishRound(room),30_000); }
+function nextRound(room:Room) { if(room.phase!=='results')return; clearTimer(room); startRound(room); emitRoom(room); room.timer=setTimeout(()=>finishRound(room),20_000); }
 function socketPlayer(socket:Socket, room:Room) { const p=[...room.seats.values()].find(x=>x.socketId===socket.id); if(!p) throw Error('Join this room first.'); return p; }
 function setSocket(socket:Socket, room:Room, p:{id:string;socketId:string|null}) { if(p.socketId && p.socketId!==socket.id) io.sockets.sockets.get(p.socketId)?.leave(room.code); p.socketId=socket.id; socket.data.room=room.code; socket.data.playerId=p.id; socket.join(room.code); }
 function failure(socket:Socket, event:string, error:unknown, ack?: (value:unknown)=>void) { const message=error instanceof Error?error.message:'That action could not be completed.'; if(ack) ack({ok:false,error:message}); else socket.emit('notice',{event,message}); }
@@ -68,7 +68,7 @@ io.on('connection',(socket)=>{
   socket.on('start-game',(payload:any)=>{
     try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(p.id!==room.hostId)throw Error('Only the host can start.');if(room.phase!=='lobby')throw Error('A game is already in progress.');
       const active=[...room.seats.values()].filter(x=>x.connected); if(active.length<2)throw Error('Invite at least one more player to start.');
-      startRound(room);emitRoom(room);room.timer=setTimeout(()=>finishRound(room),30_000);
+      startRound(room);emitRoom(room);room.timer=setTimeout(()=>finishRound(room),20_000);
     }catch(e){failure(socket,'start-game',e);}
   });
   socket.on('submit',(payload:any,ack?:Function)=>{
@@ -90,4 +90,4 @@ io.on('connection',(socket)=>{
   });
 });
 setInterval(()=>{const now=Date.now();for(const [code,room] of rooms){if(now-room.createdAt>=ROOM_TTL_MS){clearTimer(room);rooms.delete(code);continue;}for(const [id,p]of room.seats)if(!p.connected&&p.disconnectedAt&&now-p.disconnectedAt>RECONNECT_GRACE_MS){room.seats.delete(id);if(room.hostId===id){const n=[...room.seats.values()].find(x=>x.connected);room.hostId=n?.id||'';if(n)n.host=true;}}if(room.seats.size===0){clearTimer(room);rooms.delete(code);}}for(const [key,v]of peerLimits)if(now-v.at>120_000)peerLimits.delete(key);},60_000).unref();
-http.listen(PORT,'0.0.0.0',()=>console.log(`QuickQuest server listening on ${PORT}`));
+http.listen(PORT,'0.0.0.0',()=>console.log(`Quick Quest server listening on ${PORT}`));

@@ -22,8 +22,8 @@ describe('QuickQuest game rules', () => {
   it('normalizes case and surrounding punctuation in Unscramble', () => {
     const r = roomWithTwo(); startRound(r, 1000); r.answer = 'rainbow';
     const result = submitAnswer(r, 'guest', '  RAINBOW! ', 2000);
-    expect(result.points).toBe(25);
-    expect(r.seats.get('guest')?.score).toBe(25);
+    expect(result.points).toBe(4);
+    expect(r.seats.get('guest')?.score).toBe(4);
   });
   it('scores incorrect answers zero and locks a player to one attempt', () => {
     const r = roomWithTwo(); startRound(r, 1000); r.answer = 'rainbow';
@@ -36,13 +36,13 @@ describe('QuickQuest game rules', () => {
   });
   it('adds the speed bonus only during the first ten seconds', () => {
     const first = roomWithTwo(); startRound(first, 1000); first.answer = 'rainbow';
-    expect(submitAnswer(first, 'guest', 'rainbow', 10_999).points).toBe(25);
+    expect(submitAnswer(first, 'guest', 'rainbow', 10_999).points).toBe(4);
     const later = roomWithTwo(); startRound(later, 1000); later.answer = 'rainbow';
-    expect(submitAnswer(later, 'guest', 'rainbow', 11_001).points).toBe(20);
+    expect(submitAnswer(later, 'guest', 'rainbow', 11_001).points).toBe(3);
   });
   it('accepts curated Category Sprint words and rejects duplicates', () => {
     const r = roomWithTwo(); startRound(r, 1000); r.mode = 'sprint'; r.category = 'Animals'; r.answer = 'o';
-    expect(submitAnswer(r, 'guest', 'OTTER', 11_001).points).toBe(20);
+    expect(submitAnswer(r, 'guest', 'OTTER', 11_001).points).toBe(3);
     expect(submitAnswer(r, 'host', 'otter', 12_000).points).toBe(0);
   });
   it('assigns the host role when a player reconnects after everyone disconnected', () => {
