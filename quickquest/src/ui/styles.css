@@ -20,4 +20,5 @@
 .landing-copy > :not(.landing-art){position:relative;z-index:2}@media(max-width:650px){.landing-copy>.eyebrow .sparkle-dot{display:none}}
 @media(max-width:650px){.landing-copy{min-height:410px}}
 @media(max-width:650px){.star-one{right:48%;top:30px}.note-two{font-size:10px;font-weight:800;letter-spacing:.8px}}
+@media(max-width:650px){.star-one{right:4%;top:42px;font-size:18px}}
 
