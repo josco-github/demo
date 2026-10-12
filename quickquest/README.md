@@ -1,4 +1,4 @@
-# Quick Quest: Word Arena
+# quickquest: Word Arena
 
 A room-code word game for 2–8 players. The browser is a React/Vite client; an Express + Socket.IO process owns each room's canonical state, validates submissions, scores answers, and advances rounds. The client synchronizes its countdown to the server's absolute deadline. There are no player accounts.
 
