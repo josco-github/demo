@@ -26,7 +26,7 @@ function scrambled(word: string) {
 export function makeRoom(code: string, id: string, name: string, token: string): Room {
   const nickname=cleanName(name); if(!nickname) throw Error('Choose a nickname.');
   const host: Seat = { id, name:nickname, score: 0, connected: true, ready: true, host: true, lastSeen: Date.now(), tokenHash: digest(token), socketId: null, disconnectedAt: null };
-  return { code, phase: 'lobby', players: [], createdAt: Date.now(), hostId: id, round: 0, rounds: 5, mode: 'unscramble', category: 'Animals', deadline: null, prompt: '', hint: '', submitted: [], answer: null, roundScores: {}, locked: false, roundId: null, seats: new Map([[id, host]]), submissions: new Map(), acceptedSprint: new Set(), timer: null, lastReaction: new Map() };
+  return { code, phase: 'lobby', players: [], createdAt: Date.now(), hostId: id, round: 0, rounds: 5, mode: 'unscramble', category: 'Animals', deadline: null, serverNow: Date.now(), prompt: '', hint: '', submitted: [], answer: null, roundScores: {}, locked: false, roundId: null, seats: new Map([[id, host]]), submissions: new Map(), acceptedSprint: new Set(), timer: null, lastReaction: new Map() };
 }
 export function publicState(room: Room): PublicRoom {
   return { code: room.code, phase: room.phase, players: [...room.seats.values()].map(({tokenHash:_, socketId:__, disconnectedAt:___, ...p})=>({...p})), hostId: room.hostId, round: room.round, rounds: room.rounds, mode: room.mode, category: room.category, deadline: room.deadline, serverNow: Date.now(), prompt: room.prompt, hint: room.hint, submitted: [...room.submissions.keys()], answer: room.phase === 'results' || room.phase === 'finished' || (room.phase === 'playing' && room.mode === 'sprint') ? room.answer : null, roundScores: room.phase === 'results' || room.phase === 'finished' ? room.roundScores : {}, locked: room.locked, roundId: room.roundId };
@@ -87,3 +87,4 @@ export function disconnectPlayer(room: Room, id: string, now=Date.now()) {
     if (next) { room.hostId = next.id; next.host = true; p.host = false; }
   }
 }
+
