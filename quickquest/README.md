@@ -21,10 +21,11 @@ In production the client and Socket.IO server are served from one origin. For a 
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | `3001` | HTTP and Socket.IO server port |
-| `CLIENT_ORIGIN` | Render hostname when deployed; otherwise `http://localhost:5173` | Allowed browser origin(s), comma-separated |
+| `CLIENT_ORIGIN` | Koyeb or Render hostname when deployed; otherwise `http://localhost:5173` | Allowed browser origin(s), comma-separated |
 | `ROOM_TTL_MS` | `21600000` | Room lifetime / empty-room cleanup horizon (6 hours) |
 | `RECONNECT_GRACE_MS` | `60000` | Time allowed to restore a disconnected seat |
 | `VITE_SERVER_URL` | `http://<current-host>:3001` | Optional client build-time server origin |
+| `KOYEB_PUBLIC_DOMAIN` | Set by Koyeb for GitHub deployments | Used automatically to allow the app's own browser origin |
 | `RENDER_EXTERNAL_HOSTNAME` | Set by Render | Used for the deployed app's HTTPS origin; do not set manually |
 
 ## Game and state model
@@ -46,6 +47,10 @@ Validation in this workspace: a direct Node.js game-engine smoke check passed fo
 The included `render.yaml` configures a single Node web service. It builds the Vite client into `dist/`, serves those files from Express, and attaches Socket.IO to the same HTTP server so the browser uses one HTTPS origin. Push this project to a Git repository, connect that repository in Render, then create the service from the Blueprint. Render sets `PORT`; the app binds to `0.0.0.0`. `RENDER_EXTERNAL_HOSTNAME` is used to allow the app's own browser origin. Verify `https://<service>.onrender.com/health`, then test a full match from two independent devices. Keep production secrets in Render's server-side environment. Render's free web services can spin down after inactivity; the current room state is in memory and disappears if the service restarts.
 
 No repository, hosting account, production service, or live URL is configured by this source tree yet.
+
+## Deploy to Koyeb
+
+Create a free Web Service from the public GitHub repository `josco-github/demo`, select the `codex/quickquest-render` branch, and set the work directory to `quickquest`. Use the Node.js buildpack with build command `npm install && npm run build` and run command `npm start`. Expose the service's `PORT` as public HTTP on `/`, and choose the free instance in Washington, D.C. or Frankfurt. Koyeb sets `PORT` and `KOYEB_PUBLIC_DOMAIN`; the server uses the latter for Socket.IO's same-origin checks. The free instance scales to zero after inactivity, and all room state is in memory, so rooms are lost if the service restarts.
 
 ## Demo script
 
