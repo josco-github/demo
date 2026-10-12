@@ -48,3 +48,7 @@
 .shell:has(.landing) .entry-card{border-bottom:0}.shell:has(.landing) .site-footer{border-top-width:3px}
 
 
+/* Remove the remaining separator inside the cream landing card. */
+.shell:has(.landing) .privacy-note{border-top:0}
+
+
