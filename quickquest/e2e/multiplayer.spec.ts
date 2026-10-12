@@ -1,0 +1,33 @@
+import { test, expect } from '@playwright/test';
+
+test('two independent browsers share authoritative room state and reconnect', async ({ browser }) => {
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await host.goto('/'); await guest.goto('/');
+  await host.getByLabel('YOUR NICKNAME').fill('Host Player');
+  await host.getByRole('button', { name: /create a room/i }).click();
+  await expect(host.getByText('Waiting for your crew')).toBeVisible();
+  const code = await host.locator('.game-head .eyebrow').innerText();
+  const roomCode = code.match(/ROOM\s+([A-Z0-9]{5})/)?.[1];
+  expect(roomCode).toBeTruthy();
+  await guest.getByLabel('YOUR NICKNAME').fill('Guest Player');
+  await guest.getByLabel('Room code').fill(roomCode!);
+  await guest.getByRole('button', { name: /^join/i }).click();
+  await expect(host.getByText('Guest Player')).toBeVisible();
+  await guest.getByRole('button', { name: /ready/i }).click();
+  await host.getByRole('button', { name: /start game/i }).click();
+  await expect(host.getByText('Unscramble', { exact: true })).toBeVisible();
+  await expect(guest.getByText('Unscramble', { exact: true })).toBeVisible();
+  await guest.getByLabel('Your answer').fill('notaword');
+  await guest.getByRole('button', { name: /submit/i }).click();
+  await expect(guest.getByRole('status').filter({ hasText: 'locked in' })).toBeVisible();
+  await expect(host.getByText('1/2 submitted')).toBeVisible();
+  await expect(host.getByText('notaword')).toHaveCount(0);
+  await guest.reload();
+  await expect(guest.getByText('Scoreboard')).toBeVisible();
+  await hostContext.close();
+  await expect(guest.locator('.host-tag')).toContainText('HOST');
+  await guestContext.close();
+});
