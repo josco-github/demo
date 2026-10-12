@@ -18,4 +18,5 @@
 :root{background-color:#aeba9e;background-image:radial-gradient(circle,rgba(85,83,164,.11) 1.1px,transparent 1.5px),linear-gradient(135deg,#aeba9e 0%,#b8c5aa 58%,#c7bb8a 100%);background-size:30px 30px,100% 100%}
 @media(max-width:650px){.landing-copy{min-height:440px}.landing-art{height:95px;right:0}.sun-disc{width:64px;height:64px;left:28%;right:auto;top:15px;font-size:32px}.orbit-one{width:145px;height:48px;left:20%;right:auto;top:24px}.orbit-two{width:185px;height:74px;left:14%;right:auto;top:10px}.star-one{top:5px;right:18%;font-size:22px}.star-two{bottom:0;left:8%;font-size:18px}.note-two{right:0;bottom:0}}
 .landing-copy > :not(.landing-art){position:relative;z-index:2}@media(max-width:650px){.landing-copy>.eyebrow .sparkle-dot{display:none}}
+@media(max-width:650px){.landing-copy{min-height:410px}}
 
