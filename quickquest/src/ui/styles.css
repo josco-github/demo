@@ -22,4 +22,9 @@
 @media(max-width:650px){.star-one{right:48%;top:30px}.note-two{font-size:10px;font-weight:800;letter-spacing:.8px}}
 @media(max-width:650px){.star-one{right:4%;top:42px;font-size:18px}}
 @media(max-width:650px){.star-one{right:34%;top:0}}
+@media(min-width:851px){.star-two{left:18%;bottom:35px}.note-two{left:5%;right:auto;top:18px;bottom:auto}}
+
+/* Make the landing header and footer rules clearer on every screen size. */
+.shell:has(.landing) .topbar{border-bottom:2px solid rgba(53,51,58,.24)}.shell:has(.landing) .site-footer{border-top:2px solid rgba(53,51,58,.24)}
+
 
