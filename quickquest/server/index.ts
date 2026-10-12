@@ -66,7 +66,7 @@ io.on('connection',(socket)=>{
   socket.on('ready', (payload:any)=>{try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(room.phase!=='lobby')throw Error('The game has already started.');p.ready=!!payload.ready;emitRoom(room);}catch(e){failure(socket,'ready',e);}});
   socket.on('start-game',(payload:any)=>{
     try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(p.id!==room.hostId)throw Error('Only the host can start.');if(room.phase!=='lobby')throw Error('A game is already in progress.');
-      const active=[...room.seats.values()].filter(x=>x.connected); if(active.length<2)throw Error('Invite at least one more player to start.');if(active.some(x=>!x.ready))throw Error('Everyone must be ready before the host starts.');
+      const active=[...room.seats.values()].filter(x=>x.connected); if(active.length<2)throw Error('Invite at least one more player to start.');
       startRound(room);emitRoom(room);room.timer=setTimeout(()=>finishRound(room),30_000);
     }catch(e){failure(socket,'start-game',e);}
   });
