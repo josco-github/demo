@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server, Socket } from 'socket.io';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CATEGORIES, disconnectPlayer, joinRoom, makeRoom, newCode, publicState, startRound, submitAnswer, type Room } from './game.js';
@@ -72,7 +72,7 @@ io.on('connection',(socket)=>{
   });
   socket.on('submit',(payload:any,ack?:Function)=>{
     try{const room=roomOf(payload?.code),p=socketPlayer(socket,room);if(payload?.roundId!==room.roundId)throw Error('This round has moved on.');
-      const result=submitAnswer(room,p.id,p.answer);ack?.({ok:true,...result});
+      const result=submitAnswer(room,p.id,payload.answer);ack?.({ok:true,...result});
       // Other players see only that a seat has submitted, never its answer or correctness.
       socket.to(room.code).emit('submission-count',{count:room.submissions.size});emitRoom(room);
       if(room.submissions.size>=[...room.seats.values()].filter(x=>x.connected).length)finishRound(room);
@@ -90,3 +90,4 @@ io.on('connection',(socket)=>{
 });
 setInterval(()=>{const now=Date.now();for(const [code,room] of rooms){if(now-room.createdAt>=ROOM_TTL_MS){clearTimer(room);rooms.delete(code);continue;}for(const [id,p]of room.seats)if(!p.connected&&p.disconnectedAt&&now-p.disconnectedAt>RECONNECT_GRACE_MS){room.seats.delete(id);if(room.hostId===id){const n=[...room.seats.values()].find(x=>x.connected);room.hostId=n?.id||'';if(n)n.host=true;}}if(room.seats.size===0){clearTimer(room);rooms.delete(code);}}for(const [key,v]of peerLimits)if(now-v.at>120_000)peerLimits.delete(key);},60_000).unref();
 http.listen(PORT,'0.0.0.0',()=>console.log(`QuickQuest server listening on ${PORT}`));
+
