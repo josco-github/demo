@@ -28,3 +28,7 @@
 .shell:has(.landing) .topbar{border-bottom:2px solid rgba(53,51,58,.24)}.shell:has(.landing) .site-footer{border-top:2px solid rgba(53,51,58,.24)}
 
 
+/* Place the desktop Quick Thinking label beneath the orbit artwork. */
+@media(min-width:851px){.note-two{left:37%;right:auto;top:auto;bottom:-18px;transform:rotate(4deg)}}
+
+
